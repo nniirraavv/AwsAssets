@@ -1,6 +1,10 @@
-# Deploy a NodeJs Application using AWS CloudFormation  [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/your/your-project/blob/master/LICENSE)
+# Deploy a NodeJs Application using AWS CloudFormation  [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/your/your-project/blob/master/LICENSE) ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white) ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
 You can create a CloudFormation Template using either a YAML or JSON file. We're going to use a YAML file in this tutorial. 
-In this template, we'll be creating an EC2 instance, we'll configure a Security Group for EC2, and add a script to deploy a simple NodeJS app. 
+In this template, we'll be creating an EC2 instance, we'll configure a Security Group for EC2, and adding a script to deploy a simple NodeJS app. 
+
+## Blog
+
+Read the Whole blog on [Create a CloudFormation Template to Deploy a NodeJS Application](https://www.eternalsoftsolutions.com/blog/how-to-create-a-cloudformation-template-to-deploy-a-nodejs-application/)
 
 ## Installing 
 
@@ -14,10 +18,10 @@ A standard configuration of installing software and related dependencies.
 
  ## Note
  
- 1. If you want to install specific version of NodeJS and related dependencies then kindly follow this link (https://deb.nodesource.com/setup_16.x)  and you can change your desired version of nodejs in template accordingly. You have to change ```setup 16.x ```to your required version in that ```.yml file``` in VS code and then upload it to stack.
+ 1. If you want to install a specific version of NodeJS and related dependencies then kindly follow this link (https://deb.nodesource.com/setup_16.x)  and you can change your desired version of nodejs in the template accordingly. You have to change ```setup 16.x ``` to your required version in that ```.yml file``` in VS code and then upload it to stack.
  2. To Change version of yarn and pm2 you have to change in ```user data``` section like: ```sudo apt install yarn=1.x.y:``` Replace ```1.x.y```with the specific version of Yarn you want to install. For Pm2 ```sudo npm install -g pm2@2.x.y:```Replace ```2.x.y``` with the desired version of PM2 you want to install.
  3. By modifying these lines, you can ensure that the desired versions of Yarn and PM2 are installed alongside the specified version of Node.js. Remember to replace 1.x.y and 2.x.y with the actual versions you want to use.
- 4. If you want to add your project then just replace the git clone url from  
+ 4. If you want to add your project then just replace the git clone URL from  
 
 ```shel
 https://github.com/5minslearn/node_with_docker.git
@@ -151,7 +155,7 @@ This process is similar to creating an EC2 instance, except we'll replace the ty
 ```
 AWS CloudFormation - Security Group configuration
 
-The above code should be pretty self explanatory – we defined a Security group, allowing ports 22 (SSH port), 80 (HTTP port), and 8000 (NodeJS). We named the Resource as ``NodejsDeploySG``. 
+The above code should be pretty self-explanatory – we defined a Security group, allowing ports 22 (SSH port), 80 (HTTP port), and 8000 (NodeJS). We named the Resource as ``NodejsDeploySG``. 
 
 ## Attach the Security Group to EC2
 
@@ -307,7 +311,7 @@ For more details visit our blog :
 
 ## CloudFormation Full Template
 
-available in repository.
+available in the repository.
 
 ## CF-Template Command Explanations:
 
@@ -330,3 +334,6 @@ available in repository.
 17. ``pm2 start yarn --time --interpreter bash --name sample_node -- start -p 8000``: This command uses pm2 to start the application. It specifies the command to execute (yarn start -p 8000), sets the interpreter to bash, assigns the application a name (sample_node), and enables logging with timestamps (--time).
 
 These commands collectively set up the EC2 instance, install Node.js, Yarn, and pm2, clone a Git repository, install dependencies, and start the application using pm2.
+
+## Contact
+You can reach me at: [Contact Us](https://www.eternalsoftsolutions.com/contact.php)
