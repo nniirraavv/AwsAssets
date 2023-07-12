@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of the key pair to SSH into the instances
+
+Resources:
+  StaticWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: mb-website-bucket  # Replace with your desired bucket name
+      WebsiteConfiguration:
+        IndexDocument: index.html  # Replace with your website's index file name
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+        
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticWebsiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref StaticWebsiteBucket, '/*']]        
+
+  WebServerInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      AvailabilityZone: us-east-1a
+      ImageId: ami-0261755bbcb8c4a84  # Replace with the desired Amazon Machine Image (AMI) ID
+      InstanceType: t2.micro  # Replace with the desired EC2 instance type
+      KeyName: !Ref SSHKey  # Replace with your EC2 key pair name
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install -y curl gnupg2 unzip git gcc g++ make
+
+          # Install Node.js
+          curl -sL https://deb.nodesource.com/setup_18.x | sudo bash -
+          sudo apt-get install -y nodejs
+
+          # Install Yarn and Gulp
+          sudo npm install -g yarn gulp
+
+          # Install Angular CLI
+          sudo npm install -g @angular/cli
+
+          # Install PM2
+          sudo npm install -g pm2
+
+          # Install and configure Nginx
+          sudo apt-get install -y nginx
+          sudo systemctl restart nginx
+
+   DatabaseServerInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      AvailabilityZone: us-east-1a
+      ImageId: ami-0261755bbcb8c4a84  # Replace with the desired Amazon Machine Image (AMI) ID
+      InstanceType: t2.micro  # Replace with the desired EC2 instance type
+      KeyName: !Ref SSHKey  # Replace with your EC2 key pair name
+      SecurityGroupIds:
+        - !Ref DatabaseServerSecurityGroup
+
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org
+          sudo systemctl start mongod
+          sudo systemctl enable mongod
+
+  webServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the web server
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '27.109.9.114/32'
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+
+  DatabaseServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the database server
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '27017'
+          ToPort: '27017'
+          SourceSecurityGroupId: !GetAtt WebServerSecurityGroup.GroupId
+
+Outputs:
+  WebServerPublicIP:
+    Value: !GetAtt WebServerInstance.PublicIp
+  DatabaseServerPrivateIP:
+    Value: !GetAtt DatabaseServerInstance.PrivateIp
