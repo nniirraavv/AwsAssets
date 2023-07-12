@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of the key pair to SSH into the instance
+
+Resources:
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      AvailabilityZone: us-east-1a
+      ImageId: ami-0261755bbcb8c4a84  # Replace with the desired Amazon Machine Image (AMI) ID
+      InstanceType: t2.micro  # Replace with the desired EC2 instance type
+      KeyName: !Ref SSHKey  # Replace with your EC2 key pair name
+      SecurityGroupIds:
+        - !Ref meaninstanceSecurityGroup
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org
+          sudo "sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf\n",
+          sudo systemctl start mongodb
+          sudo systemctl enable mongodb
+
+          sudo apt-get install -y curl gnupg2 unzip git gcc g++ make
+          sudo curl -sL https://deb.nodesource.com/setup_18.x | bash -
+          sudo apt-get install -y nodejs
+          sudo npm install -g yarn gulp
+
+          sudo npm install -g @angular/cli
+          sudo npm install pm2 -g
+          sudo apt-get install -y nginx
+          nginx -t
+          sudo systemctl restart nginx
+
+  meaninstanceSecurityGroup:  
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MongoDB & Node.js server ports
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '27017'
+          ToPort: '27017'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '3000'
+          ToPort: '3000'
+          CidrIp: 0.0.0.0/0       
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  PublicIP:
+    Value: !GetAtt EC2Instance.PublicIp
