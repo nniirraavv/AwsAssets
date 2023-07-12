@@ -1,4 +1,4 @@
-# **MEAN STACK Version-1**
+# **MEAN STACK Version-1** ![Angular](https://img.shields.io/badge/angular-%23DD0031.svg?style=for-the-badge&logo=angular&logoColor=white) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB)
 
 - A MEAN Stack is a free, open-source, popular JavaScript software stack used for developing dynamic websites and web applications. It is made from four components: MongoDB, Express, Angular, and Node.js. Angular is used for frontend development, while Node.js, Express, and MongoDB are used for backend development. A MEAN stack is based on JavaScript language so it can handle all aspects of an application.
 
