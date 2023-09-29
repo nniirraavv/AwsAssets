@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.medium
+    Description: Enter the EC2 instance type for the WordPress server.
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance.
+
+  DatabaseName:
+    Type: String
+    Description: The name of the WordPress database
+
+  DatabaseUsername:
+    Type: String
+    Description: The username for the WordPress database
+
+  DatabasePassword:
+    Type: String
+    Description: The password for the WordPress database
+
+  DatabaseHost:
+    Type: String
+    Description: The host of the WordPress database
+
+  TablePrefix:
+    Type: String
+    Description: The table prefix for the WordPress database (optional)
+
+Resources:
+  WordPressInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-053b0d53c279acc90
+      KeyName: !Ref SSHKey
+      SecurityGroupIds:
+        - !Ref wordpressinstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: Wordpress-DBserver 
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update 
+          sudo apt-get install -y apache2 php mysql-server mysql-client php-bcmath php-imagick php-mysql php-xml php-zip php-curl
+          sudo systemctl enable apache2
+          sudo systemctl start apache2
+          sudo systemctl enable mysql
+          sudo systemctl start mysql
+          cd /tmp
+          wget https://wordpress.org/latest.tar.gz
+          sudo tar -xvf latest.tar.gz
+          sudo mv wordpress/* /var/www/html/
+          cd
+          sudo rm -vf /var/www/html/index.html
+          sudo chown -R www-data:www-data /var/www/html/
+          sudo chmod -R 755 /var/www/html/
+          # cat wp-config-sample.php > wp-config.php
+          # Create the WordPress database
+          sudo mysql -e "CREATE DATABASE ${DatabaseName};"
+
+          # Create a database user and grant privileges
+          sudo mysql -e "CREATE USER '${DatabaseUsername}'@'localhost' IDENTIFIED BY '${DatabasePassword}';"
+          sudo mysql -e "GRANT ALL PRIVILEGES ON ${DatabaseName}.* TO '${DatabaseUsername}'@'localhost';"
+          sudo mysql -e "FLUSH PRIVILEGES;"
+          sudo mysql -e "exit" 
+          # Configure wp-config.php
+          sudo touch /var/www/html/wp-config.php
+          sudo mv /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+          sudo sed -i "s/database_name_here/${DatabaseName}/" /var/www/html/wp-config.php
+          sudo sed -i "s/username_here/${DatabaseUsername}/" /var/www/html/wp-config.php
+          sudo sed -i "s/password_here/${DatabasePassword}/" /var/www/html/wp-config.php
+          sudo sed -i "s/localhost/${DatabaseHost}/" /var/www/html/wp-config.php
+          sudo sed -i "s/wp_/${TablePrefix}/" /var/www/html/wp-config.php
+
+          # Restart services
+          sudo systemctl restart apache2
+          sudo systemctl restart mysql
+
+          # Install phpMyAdmin
+          cd /tmp
+          wget https://files.phpmyadmin.net/phpMyAdmin/5.1.1/phpMyAdmin-5.1.1-all-languages.zip
+          sudo apt-get install -y unzip
+          sudo unzip phpMyAdmin-5.1.1-all-languages.zip -d /var/www/html/
+          sudo mv /var/www/html/phpMyAdmin-5.1.1-all-languages /var/www/html/phpmyadmin
+          sudo cp /var/www/html/phpmyadmin/config.sample.inc.php /var/www/html/phpmyadmin/config.inc.php
+          sudo sed -i "s/\['host'\] = 'localhost'/\['host'\] = '${DatabaseHost}'/" /var/www/html/phpmyadmin/config.inc.php
+
+          # Restart Apache
+          sudo systemctl restart apache2
+  wordpressinstanceSecurityGroup:  
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable ssh http https and mysql ports
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0       
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0        
+
+Outputs:
+  WordPressInstancePublicIP:
+    Value: !GetAtt WordPressInstance.PublicIp
+    Description: The public IP address of the WordPress instance.
